@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: Reserva Service API
+  description: API para la gestión de reservas de hoteles
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081
+    description: Reserva Server
+
+paths:
+  /reserva:
+    post:
+      summary: Crear una reserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaDto'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+
+  /reserva/{id}:
+    get:
+      summary: Obtener reserva por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+        '404':
+          description: Reserva no encontrada
+
+    delete:
+      summary: Eliminar reserva
+      responses:
+        '204':
+          description: Reserva eliminada
+
+  /reserva/{id}/estado:
+    patch:
+      summary: Actualizar estado de reserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstadoReserva'
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+
+  /reserva/{id}/fechas:
+    patch:
+      summary: Modificar fechas de reserva
+      parameters:
+        - name: inicio
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: fin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Fechas actualizadas
+
+  /reserva/{id}/descuentos:
+    patch:
+      summary: Agregar descuentos a una reserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/DescuentoDto'
+      responses:
+        '200':
+          description: Descuentos aplicados
+
+  /reserva/fechas:
+    get:
+      summary: Obtener reservas filtradas por rango de fechas
+      description: >
+        Devuelve todas las reservas.
+        Si se envían fechaInicio y fechaFin, filtra las reservas cuyo rango esté dentro de esas fechas.
+        Si no se envían parámetros, devuelve todas las reservas.
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: false
+          description: Fecha de inicio del rango (inclusive)
+          schema:
+            type: string
+            format: date
+            example: 2026-01-10
+
+        - name: fechaFin
+          in: query
+          required: false
+          description: Fecha de fin del rango (inclusive)
+          schema:
+            type: string
+            format: date
+            example: 2026-01-15
+
+      responses:
+        '200':
+          description: Lista de reservas encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservaDto'
+
+        '400':
+          description: Parámetros inválidos (fechaInicio posterior a fechaFin)
+
+components:
+  schemas:
+    CrearReservaDto:
+      type: object
+      required: [usuarioId, hotelId, fechaInicio, fechaFin]
+      properties:
+        usuarioId:
+          type: integer
+        hotelId:
+          type: integer
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+
+    ReservaDto:
+      type: object
+      properties:
+        usuario:
+          type: integer
+        hotel:
+          type: integer
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        estadoReserva:
+          $ref: '#/components/schemas/EstadoReserva'
+
+    EstadoReserva:
+      type: string
+      enum:
+        - CREADA
+        - CONFIRMADA
+        - CANCELADA
+        - FINALIZADA
+
+    DescuentoDto:
+      type: object
+      properties:
+        tipo:
+          type: string
+          example: POR_DIA
+        valor:
+          type: number
+          format: double
